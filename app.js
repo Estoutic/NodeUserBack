@@ -1,125 +1,81 @@
 const express = require("express");
-const sqlite3 = require("sqlite3");
 const cors = require("cors");
+const { initDB } = require("./db");
+const User = require("./models/User");
 
 const SERVER_PORT = 3000;
-
 const app = express();
+
 app.use(cors());
-
-
-const db = new sqlite3.Database("users.db");
-
-db.run(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
-    name TEXT,
-    phone TEXT,
-    email TEXT,
-    surname TEXT
-  )
-`);
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.post("/user", (req, res) => {
-  const { name, phone, email, surname } = req.body;
+initDB();
 
-  if (!name || !phone || !email || !surname) {
-    return res.status(400).json({
-      error: "Please provide all the required fields: name, phone, email, surname",
+app.post("/user", async (req, res) => {
+  try {
+    const user = await User.create({
+      name: req.body.name,
+      phone: req.body.phone,
+      email: req.body.email,
+      surname: req.body.surname,
     });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-  db.run(
-    "INSERT INTO users (name, phone, email, surname) VALUES (?, ?, ?, ?)",
-    [name, phone, email, surname],
-    (err) => {
-      if (err) {
-        return res.status(500).json({
-          error: "Error inserting data into the database",
-        });
-      }
-
-      res.json({
-        message: "User added successfully",
-        userId: this.lastID,
-      });
-    }
-  );
 });
 
-
-app.get("/users", (req, res) => {
-  db.all("SELECT * FROM users", (err, rows) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error retrieving users from the database",
-      });
-    }
-    res.json(rows);
-  });
+app.get("/users", async (req, res) => {
+  try {
+    const userList = await User.findAll();
+    res.json(userList);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.get("/users/:id", (req, res) => {
-  const userId = req.params.id;
-
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (err, row) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error retrieving user from the database",
-      });
-    }
-
-    if (!row) {
+app.get("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        message: `User not found with ID ${req.params.id}`,
       });
     }
 
-    res.json(row);
-  });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.put("/users/:id", (req, res) => {
+app.put("/users/:id", async (req, res) => {
   const userId = req.params.id;
+  console.log(req.params);
   const { name, phone, email, surname } = req.body;
 
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (err, existingUser) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error checking user existence in the database",
-      });
-    }
-
+  try {
+    const existingUser = await User.findByPk(userId);
     if (!existingUser) {
       return res.status(404).json({
-        error: "User not found",
+        error: `User not found with ID ${userId}`,
       });
     }
 
-    db.run(
-      "UPDATE users SET name = ?, phone = ?, email = ?, surname = ? WHERE id = ?",
-      [name, phone, email, surname, userId],
-      (err) => {
-        if (err) {
-          return res.status(500).json({
-            error: "Error updating user in the database",
-          });
-        }
+    await existingUser.update({ name, phone, email, surname });
 
-        res.json({
-          message: "User updated successfully",
-          userId: userId,
-        });
-      }
-    );
-  });
+    res.json({
+      message: "User updated successfully",
+      userId: userId,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+
 });
 
-
-app.patch("/users/:id", (req, res) => {
+app.patch("/users/:id", async (req, res) => {
   const userId = req.params.id;
   const { field, value } = req.body;
 
@@ -129,96 +85,66 @@ app.patch("/users/:id", (req, res) => {
     });
   }
 
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error checking user existence in the database",
-      });
-    }
-
+  try {
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        error: `User not found with ID ${userId}`,
       });
     }
 
-    db.run(
-      `UPDATE users SET ${field} = ? WHERE id = ?`,
-      [value, userId],
-      (updateErr) => {
-        if (updateErr) {
-          return res.status(500).json({
-            error: "Error updating user field in the database",
-          });
-        }
+    await user.update({ [field]: value });
 
-        res.json({
-          message: `User field '${field}' updated successfully`,
-          userId: userId,
-        });
-      }
-    );
-  });
+    res.json({
+      message: `User field '${field}' updated successfully`,
+      userId: userId,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-
-app.delete("/users/:id", (req, res) => {
+app.delete("/users/:id", async (req, res) => {
   const userId = req.params.id;
 
-  db.get("SELECT * FROM users WHERE id = ?", [userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error checking user existence in the database",
-      });
-    }
-
+  try {
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        error: `User not found with ID ${userId}`,
       });
     }
-    db.run("DELETE FROM users WHERE id = ?", [userId], (err) => {
-      if (err) {
-        return res.status(500).json({
-          error: "Error deleting user from the database",
-        });
-      }
 
-      res.json({
-        message: "User deleted successfully",
-        userId: userId,
-      });
+    await user.destroy();
+    res.json({
+      message: "User deleted successfully",
+      userId: userId,
     });
-  });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-app.get("/filter/:type", (req, res) => {
-  const  sortOrder  = req.params.type;
 
-  let sql = "SELECT * FROM users";
+app.get("/filter/:type", async (req, res) => {
+  const sortOrder = req.params.type;
+  let order = "ASC";
 
-  sql += " ORDER BY surname";
-
-  if (sortOrder) {
-    sql += ` ${sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC"}`;
+  if (sortOrder && sortOrder.toLowerCase() === "desc") {
+    order = "DESC";
   }
 
-  db.all(sql, (err, rows) => {
-    if (err) {
-      return res.status(500).json({
-        error: "Error retrieving filtered users from the database",
-      });
-    }
-
-    res.json(rows);
-  });
+  try {
+    const userList = await User.findAll({
+      order: [["surname", order]],
+    });
+    res.json(userList);
+  } catch (error) {
+    res.status(500).json({
+      error: "Error retrieving filtered users from the database",
+    });
+  }
 });
-
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
 app.listen(SERVER_PORT, () => {
   console.log(`Server is working on port ${SERVER_PORT}`);
 });
-
-
