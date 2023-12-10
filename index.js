@@ -13,8 +13,47 @@ app.use(express.json());
 
 initDB();
 
-// Create a new user in the database.
-app.post("/user", async (req, res) => {
+
+const isValidString = (value) => typeof value === 'string' && value.trim() !== '';
+
+const validateUserRequest = (req, res, next) => {
+  const { name, phone, email, surname } = req.body;
+
+  if (!isValidString(name)) {
+    return res.status(400).json({ error: "Invalid 'name'. It must be a non-empty string." });
+  }
+
+  if (!isValidString(phone)) {
+    return res.status(400).json({ error: "Invalid 'phone'. It must be a non-empty string." });
+  }
+
+  if (!isValidString(email)) {
+    return res.status(400).json({ error: "Invalid 'email'. It must be a non-empty string." });
+  }
+
+  if (!isValidString(surname)) {
+    return res.status(400).json({ error: "Invalid 'surname'. It must be a non-empty string." });
+  }
+
+  next();
+};
+
+const validatePatchRequest = (req, res, next) => {
+  const { field, value } = req.body;
+
+  if (!isValidString(field)) {
+    return res.status(400).json({ error: "Invalid 'field'. It must be a non-empty string." });
+  }
+
+  if (value === undefined || value === null || (typeof value !== 'string' && typeof value !== 'number')) {
+    return res.status(400).json({ error: "Invalid 'value'. It must be a non-empty string or number." });
+  }
+
+  next();
+};
+
+// Create a new user in the database
+app.post("/user",validateUserRequest, async (req, res) => {
   try {
     const user = await User.create({
       name: req.body.name,
@@ -71,7 +110,7 @@ app.get("/users/:id", async (req, res) => {
 });
 
 // Update an existing user by ID in the database.
-app.put("/users/:id", async (req, res) => {
+app.put("/users/:id",validateUserRequest, async (req, res) => {
   const userId = req.params.id;
   console.log(req.params);
   const { name, phone, email, surname } = req.body;
@@ -97,7 +136,7 @@ app.put("/users/:id", async (req, res) => {
 });
 
 // Partially update an existing user's specific field by ID in the database.
-app.patch("/users/:id", async (req, res) => {
+app.patch("/users/:id", validatePatchRequest, async (req, res) => {
   const userId = req.params.id;
   const { field, value } = req.body;
 
