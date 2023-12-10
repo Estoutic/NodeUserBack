@@ -13,6 +13,7 @@ app.use(express.json());
 
 initDB();
 
+// Create a new user in the database.
 app.post("/user", async (req, res) => {
   try {
     const user = await User.create({
@@ -27,6 +28,7 @@ app.post("/user", async (req, res) => {
   }
 });
 
+// Retrieve a list of users from the database with optional sorting.
 app.get("/users", async (req, res) => {
   let order = null;
 
@@ -52,7 +54,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-
+// Retrieve a specific user by ID from the database.
 app.get("/users/:id", async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
@@ -68,6 +70,7 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
+// Update an existing user by ID in the database.
 app.put("/users/:id", async (req, res) => {
   const userId = req.params.id;
   console.log(req.params);
@@ -93,6 +96,7 @@ app.put("/users/:id", async (req, res) => {
 
 });
 
+// Partially update an existing user's specific field by ID in the database.
 app.patch("/users/:id", async (req, res) => {
   const userId = req.params.id;
   const { field, value } = req.body;
@@ -122,6 +126,7 @@ app.patch("/users/:id", async (req, res) => {
   }
 });
 
+// Delete an existing user by ID from the database.
 app.delete("/users/:id", async (req, res) => {
   const userId = req.params.id;
 
