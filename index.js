@@ -17,21 +17,20 @@ initDB();
 const isValidString = (value) => typeof value === 'string' && value.trim() !== '';
 
 const validateUserRequest = (req, res, next) => {
-  const { name, phone, email, surname } = req.body;
 
-  if (!isValidString(name)) {
+  if (!isValidString(req.body.name)) {
     return res.status(400).json({ error: "Invalid 'name'. It must be a non-empty string." });
   }
 
-  if (!isValidString(phone)) {
+  if (!isValidString(req.body.phone)) {
     return res.status(400).json({ error: "Invalid 'phone'. It must be a non-empty string." });
   }
 
-  if (!isValidString(email)) {
+  if (!isValidString(req.body.email)) {
     return res.status(400).json({ error: "Invalid 'email'. It must be a non-empty string." });
   }
 
-  if (!isValidString(surname)) {
+  if (!isValidString(req.body.surname)) {
     return res.status(400).json({ error: "Invalid 'surname'. It must be a non-empty string." });
   }
 
@@ -39,21 +38,20 @@ const validateUserRequest = (req, res, next) => {
 };
 
 const validatePatchRequest = (req, res, next) => {
-  const { field, value } = req.body;
 
-  if (!isValidString(field)) {
+  if (!isValidString(req.body.field)) {
     return res.status(400).json({ error: "Invalid 'field'. It must be a non-empty string." });
   }
 
-  if (!isValidString(value)) {
+  if (!isValidString(req.body.value)) {
     return res.status(400).json({ error: "Invalid 'value'. It must be a non-empty string or number." });
   }
 
   next();
 };
 
-// Create a new user in the database
-app.post("/user",validateUserRequest, async (req, res) => {
+// 1. Создание сущности в базе данных 
+app.post("/user", validateUserRequest, async (req, res) => {
   try {
     const user = await User.create({
       name: req.body.name,
@@ -67,7 +65,7 @@ app.post("/user",validateUserRequest, async (req, res) => {
   }
 });
 
-// Retrieve a list of users from the database with optional sorting.
+// 2. Получение списка юзеров с возможностью сортировки (в алфавитном порядке по фамилиям или в обратном)
 app.get("/users", async (req, res) => {
   let order = null;
 
@@ -93,7 +91,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// Retrieve a specific user by ID from the database.
+// 3. Получение юзера по ID
 app.get("/users/:id", async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
@@ -102,18 +100,15 @@ app.get("/users/:id", async (req, res) => {
         message: `User not found with ID ${req.params.id}`,
       });
     }
-
-    res.status(200).json(user);
+    res.json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Update an existing user by ID in the database.
-app.put("/users/:id",validateUserRequest, async (req, res) => {
+// Обновление всех полей сущности по id
+app.put("/users/:id", validateUserRequest, async (req, res) => {
   const userId = req.params.id;
-  console.log(req.params);
-  const { name, phone, email, surname } = req.body;
 
   try {
     const existingUser = await User.findByPk(userId);
@@ -123,7 +118,7 @@ app.put("/users/:id",validateUserRequest, async (req, res) => {
       });
     }
 
-    await existingUser.update({ name, phone, email, surname });
+    await existingUser.update(req.body);
 
     res.json({
       message: "User updated successfully",
@@ -132,32 +127,24 @@ app.put("/users/:id",validateUserRequest, async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-
 });
 
-// Partially update an existing user's specific field by ID in the database.
+
 app.patch("/users/:id", validatePatchRequest, async (req, res) => {
   const userId = req.params.id;
-  const { field, value } = req.body;
-
-  if (!field || value === undefined) {
-    return res.status(400).json({
-      error: "Please provide the field and value to update",
-    });
-  }
 
   try {
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const existingUser = await User.findByPk(userId);
+    if (!existingUser) {
       return res.status(404).json({
         error: `User not found with ID ${userId}`,
       });
     }
 
-    await user.update({ [field]: value });
+    await existingUser.update({ [req.body.field]: req.body.value });
 
     res.json({
-      message: `User field '${field}' updated successfully`,
+      message: `User field '${req.body.field}' updated successfully`,
       userId: userId,
     });
   } catch (error) {
@@ -165,19 +152,19 @@ app.patch("/users/:id", validatePatchRequest, async (req, res) => {
   }
 });
 
-// Delete an existing user by ID from the database.
+// Удалние юзера по id
 app.delete("/users/:id", async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const existingUser = await User.findByPk(userId);
+    if (!existingUser) {
       return res.status(404).json({
         error: `User not found with ID ${userId}`,
       });
     }
 
-    await user.destroy();
+    await existingUser.destroy();
     res.json({
       message: "User deleted successfully",
       userId: userId,
