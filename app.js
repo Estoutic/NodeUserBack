@@ -27,13 +27,30 @@ app.post("/user", async (req, res) => {
 });
 
 app.get("/users", async (req, res) => {
+  let order = null;
+
+  if (req.query.sort) {
+    const sortOrder = req.query.sort.toUpperCase();
+
+    if (sortOrder !== "ASC" && sortOrder !== "DESC") {
+      return res.status(400).json({
+        error: "Invalid sort order. Please use 'asc' or 'desc'.",
+      });
+    }
+
+    order = [["surname", sortOrder]];
+  }
+
   try {
-    const userList = await User.findAll();
+    const userList = await User.findAll({
+      order: order,
+    });
     res.json(userList);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error retrieving users from the database" });
   }
 });
+
 
 app.get("/users/:id", async (req, res) => {
   try {
