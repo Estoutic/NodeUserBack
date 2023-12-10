@@ -45,7 +45,7 @@ const validatePatchRequest = (req, res, next) => {
     return res.status(400).json({ error: "Invalid 'field'. It must be a non-empty string." });
   }
 
-  if (value === undefined || value === null || (typeof value !== 'string' && typeof value !== 'number')) {
+  if (!isValidString(value)) {
     return res.status(400).json({ error: "Invalid 'value'. It must be a non-empty string or number." });
   }
 
