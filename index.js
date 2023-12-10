@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const { initDB } = require("./db");
-const User = require("./models/User");
+const initDB = require("./db").initDB;
+
+const User = require("./db/models/User");
 
 const SERVER_PORT = 3000;
 const app = express();
@@ -139,26 +140,6 @@ app.delete("/users/:id", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-app.get("/filter/:type", async (req, res) => {
-  const sortOrder = req.params.type;
-  let order = "ASC";
-
-  if (sortOrder && sortOrder.toLowerCase() === "desc") {
-    order = "DESC";
-  }
-
-  try {
-    const userList = await User.findAll({
-      order: [["surname", order]],
-    });
-    res.json(userList);
-  } catch (error) {
-    res.status(500).json({
-      error: "Error retrieving filtered users from the database",
-    });
   }
 });
 
