@@ -4,6 +4,7 @@ const sequelizeInstance = new Sequelize({
   dialect: "sqlite",
   storage: "./sqliteData/users.sqlite",
 });
+// Создание экземпляра Sequelize
 
 const initDB = async () => {
   try {
@@ -15,8 +16,13 @@ const initDB = async () => {
     process.exit();
   }
 };
+// Инициализация базы данных
 
 module.exports = {
   sequelizeInstance,
   initDB,
 };
+
+
+// Экспорт модуля
+

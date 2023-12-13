@@ -107,7 +107,7 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
-// Обновление всех полей сущности по id
+// 4. Обновление всех полей сущности по id
 app.put("/users/:id", validateUserRequest, async (req, res) => {
   const userId = req.params.id;
 
@@ -130,7 +130,7 @@ app.put("/users/:id", validateUserRequest, async (req, res) => {
   }
 });
 
-
+// 5. Обновление поля сущности по id
 app.patch("/users/:id", validatePatchRequest, async (req, res) => {
   const userId = req.params.id;
 
@@ -153,7 +153,7 @@ app.patch("/users/:id", validatePatchRequest, async (req, res) => {
   }
 });
 
-// Удалние юзера по id
+// 6. Удалние юзера по id
 app.delete("/users/:id", async (req, res) => {
   const userId = req.params.id;
 

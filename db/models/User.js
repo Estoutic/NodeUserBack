@@ -29,3 +29,5 @@ const User = sequelizeInstance.define("User", {
 });
 
 module.exports = User;
+
+// Описание сущности Юзера
