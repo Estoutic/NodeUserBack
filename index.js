@@ -4,7 +4,7 @@ const initDB = require("./db").initDB;
 
 const User = require("./db/models/User");
 
-const SERVER_PORT = 3000;
+const SERVER_PORT = 3111;
 const app = express();
 
 app.use(cors());
@@ -78,6 +78,7 @@ app.get("/users", async (req, res) => {
       });
     }
 
+    // Фильтрация если пришел ASC или DESC
     order = [["surname", sortOrder]];
   }
 
